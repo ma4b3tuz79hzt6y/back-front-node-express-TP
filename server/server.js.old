@@ -1,0 +1,76 @@
+// Importation des modules
+const express = require('express');
+const mysql = require('mysql2');
+const cors = require('cors');
+
+
+// Configuration de l'application
+const app = express();
+app.use(express.json());
+app.use(cors());
+
+
+// Connexion à la base de données MySQL
+const db = mysql.createPool(
+{
+    host: 'localhost',
+    user: 'root',
+    password: '12345678',
+    database: 'mon_app',
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0
+});
+
+// Exemple d'endpoint appelant une procédure stockée
+app.get('/utilisateurs', (req, res) => {
+    db.query('CALL all_users(@s)', (err, results) => {
+        if (err) {
+            //console.error(err);
+            return res.status(500).json({  message: err.sqlMessage  });
+        }
+        res.json(results[0]);
+    });
+});
+app.post('/utilisateurs', (req, res) => {
+    const { nom,prenom ,email,phone } = req.body;
+    db.query('CALL Ajouter_user(?, ?,?,?)', [nom,nom,email,phone], (err, results) => {
+        if (err) {
+            //console.error(err);
+            return res.status(500).json({  message: err.sqlMessage  });
+        }
+        res.json({ message: 'Utilisateur ajouté avec succès' });
+    });
+});
+
+app.put('/utilisateurs', (req, res) => {
+    const {id, nom,prenom ,email,phone } = req.body;
+    db.query('CALL Modifier_user(?,?, ?,?,?)', [id,nom,nom,email,phone], (err, results) => {
+        if (err) {
+            //console.error(err);
+            return res.status(500).json({ message: err.sqlMessage });
+        }
+        res.json({ message: 'Utilisateur Modifié avec succès' });
+    });
+});
+
+// Route pour supprimer un utilisateur
+app.delete('/utilisateurs/:id', (req, res) => {
+    const userId = req.params.id;
+    db.query('CALL Supprimer_user(?)', [userId], (err, results) => {
+        if (err) {
+           // console.error(err);
+            //console.log(err.errno);
+            return res.status(500).json({ message: err.sqlMessage });
+        }
+        res.json({ message: 'Utilisateur supprimé' });
+    });
+});
+
+
+// Démarrer le serveur
+const PORT = 3000;
+app.listen(PORT, () => {
+    console.log(`Serveur en écoute sur http://localhost:${PORT}`);
+});
+
