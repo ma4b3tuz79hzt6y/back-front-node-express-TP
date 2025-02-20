@@ -24,9 +24,10 @@ CREATE TABLE IF NOT EXISTS `mon_app`.`users` (
   `prenom` VARCHAR(45) NOT NULL,
   `email` VARCHAR(200) NULL DEFAULT NULL,
   `phone` VARCHAR(45) NULL DEFAULT NULL,
+  `adresse` VARCHAR(200) NULL DEFAULT 'INCONNUE',
   PRIMARY KEY (`id`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 11
+AUTO_INCREMENT = 13
 DEFAULT CHARACTER SET = big5;
 
 CREATE UNIQUE INDEX `email_UNIQUE` ON `mon_app`.`users` (`email` ASC) VISIBLE;
@@ -42,12 +43,16 @@ CREATE TABLE IF NOT EXISTS `mon_app`.`commandes` (
   `user_id` INT NOT NULL,
   `date_cmd` DATE NULL DEFAULT NULL,
   `tva` DECIMAL(4,2) NOT NULL,
+  `montant_ht` DOUBLE(10,2) NULL DEFAULT '0.00',
+  `montant_ttc` DOUBLE(10,2) NULL DEFAULT '0.00',
+  `numero_facture` VARCHAR(45) NULL DEFAULT 'AUCUNE',
+  `paye` VARCHAR(3) NULL DEFAULT 'NON',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_commandes_users`
     FOREIGN KEY (`user_id`)
     REFERENCES `mon_app`.`users` (`id`))
 ENGINE = InnoDB
-AUTO_INCREMENT = 13
+AUTO_INCREMENT = 180
 DEFAULT CHARACTER SET = big5;
 
 CREATE INDEX `fk_commandes_users_idx` ON `mon_app`.`commandes` (`user_id` ASC) VISIBLE;
@@ -99,7 +104,8 @@ BEGIN
     DECLARE user_count INT;
     
     
-    SELECT COUNT(*) INTO user_count FROM users WHERE email = p_email;
+    SELECT COUNT(*) INTO user_count FROM users WHERE (email = p_email)
+     OR (phone = p_phone);
     
     IF user_count > 0 THEN
         SIGNAL SQLSTATE '45000'
@@ -280,6 +286,38 @@ BEGIN
         
         SELECT * FROM users;
     END IF;
+END$$
+
+DELIMITER ;
+
+-- -----------------------------------------------------
+-- procedure et Fonction utilitaires
+-- generation numero automatique de la facture
+-- calcul sommation des facrures
+-- Calcul montants payée
+-- Autre selon besoin
+-- -----------------------------------------------------
+-- -----------------------------------------------------
+-- procedure generate_numero_facture
+-- -----------------------------------------------------
+
+DELIMITER $$
+USE `mon_app`$$
+CREATE DEFINER=`root`@`localhost` PROCEDURE `generate_numero_facture`(p_id INT)
+BEGIN
+    Declare facture_date DATE;
+    Declare user INT;
+    Declare facture_existe VARCHAR(45); 
+    
+    select user_id, numero_facture ,date_cmd into user,
+    facture_existe,facture_date from commandes  
+    where id = p_id;
+    
+    IF facture_existe = "AUCUNE"  THEN 
+    
+    SET facture_existe = CONCAT('FAC-', user, '-', DATE_FORMAT(facture_date, '%Y%m%d'), '-', DATE_FORMAT(CURRENT_TIME(), '%H%i%s'));
+    END IF;
+    update  commandes set  numero_facture = facture_existe where id = p_id;
 END$$
 
 DELIMITER ;

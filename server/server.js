@@ -2,8 +2,11 @@
 const express = require('express');
 const cors = require('cors');
 const db = require('./config/db');
+//---------------------------------------------------------------------------------------
+// importer vos Routes ici
 const userRoutes = require('./routes/users');
 const commandeRoutes = require('./routes/commandes');
+//----------------------------------------------------------------------------------------
 
 // Configuration de l'application
 const app = express();
@@ -13,7 +16,7 @@ app.use(cors());
 //---------------------------------------------------------------------------------------
 // Routes charger vos Routes ici
 app.use('/utilisateurs', userRoutes);
-app.use('/commandes', commandeRoutes);
+app.use('/commandes',commandeRoutes);
 //---------------------------------------------------------------------------------------
 
 // Démarrer le serveur
